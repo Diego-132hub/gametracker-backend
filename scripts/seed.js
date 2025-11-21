@@ -30,7 +30,7 @@ const juegosEjemplo = [
   {
     titulo: 'Hollow Knight',
     desarrolladora: 'Team Cherry',
-    genero: 'Metroidvania',
+    genero: 'Aventura',
     plataforma: 'PC',
     añoLanzamiento: 2017,
     estado: 'Completado',
