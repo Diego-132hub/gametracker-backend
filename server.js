@@ -2,8 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import juegoRoutes from './routes/juegos.js';  // ← IMPORTANTE
-import resenaRoutes from './routes/resenas.js'; // ← IMPORTANTE
 
 // Cargar variables de entorno
 dotenv.config();
@@ -18,11 +16,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ RUTAS CONFIGURADAS CORRECTAMENTE
-app.use('/api/juegos', juegoRoutes);
-app.use('/api/resenas', resenaRoutes);
-
-// Ruta de prueba básica
+// Ruta de prueba PRIMERO
 app.get('/', (req, res) => {
   res.json({ 
     message: '🚀 GameTracker API is running!',
@@ -40,38 +34,54 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Importar y usar rutas (con manejo de errores)
+try {
+  const juegoRoutes = await import('./routes/juegos.js');
+  const resenaRoutes = await import('./routes/resenas.js');
+  
+  app.use('/api/juegos', juegoRoutes.default);
+  app.use('/api/resenas', resenaRoutes.default);
+  
+  console.log('✅ All routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading routes:', error);
+}
+
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Route not found',
     path: req.originalUrl,
-    availableRoutes: ['/api/juegos', '/api/resenas', '/api/health']
+    availableRoutes: ['/', '/api/health', '/api/juegos', '/api/resenas']
   });
 });
 
-// Conexión a MongoDB y inicio del servidor
+// Conexión a MongoDB
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
+    return true;
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
+    return false;
   }
 };
 
+// Iniciar servidor
 const startServer = async () => {
-  await connectDB();
+  const dbConnected = await connectDB();
   
+  if (!dbConnected) {
+    console.log('⚠️ Starting server without MongoDB connection');
+  }
+
   const PORT = process.env.PORT || 10000;
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📡 Base URL: http://localhost:${PORT}`);
-    console.log(`🔗 Available routes:`);
-    console.log(`   - GET /api/juegos`);
-    console.log(`   - GET /api/resenas`);
-    console.log(`   - GET /api/health`);
+    console.log('✅ Server started successfully!');
   });
 };
 
