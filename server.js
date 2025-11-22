@@ -56,18 +56,17 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`
-  🚀 Servidor GameTracker iniciado!
-  📍 Puerto: ${PORT}
-  🌐 Entorno: ${process.env.NODE_ENV || 'development'}
-  🔗 API: http://localhost:${PORT}/api
-  📊 MongoDB: Conectado a Atlas
-  `);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor GameTracker iniciado!`);
+  console.log(`📍 Puerto: ${PORT}`);
+  console.log(`🌐 Entorno: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 API: http://0.0.0.0:${PORT}/api`);
 });
 
 // Manejo graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\n🛑 Apagando servidor...');
-  process.exit(0);
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('🔌 Process terminated');
+  });
 });
