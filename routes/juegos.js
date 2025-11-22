@@ -5,17 +5,17 @@ import {
   createJuego,
   updateJuego,
   deleteJuego,
-  getJuegosFiltrados
+  getEstadisticas
 } from '../controllers/juegoController.js';
 
 const router = express.Router();
 
 // Rutas para juegos
-router.get('/', getJuegos);
-router.get('/filtros', getJuegosFiltrados);
-router.get('/:id', getJuegoById);
-router.post('/', createJuego);
-router.put('/:id', updateJuego);
-router.delete('/:id', deleteJuego);
+router.get('/', getJuegos);           // Obtener todos los juegos
+router.get('/estadisticas', getEstadisticas); // Estadísticas
+router.get('/:id', getJuegoById);     // Obtener juego por ID
+router.post('/', createJuego);        // Crear nuevo juego
+router.put('/:id', updateJuego);      // Actualizar juego
+router.delete('/:id', deleteJuego);   // Eliminar juego
 
 export default router;
