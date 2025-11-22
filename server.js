@@ -1,73 +1,78 @@
 import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
 import dotenv from 'dotenv';
-import connectDB from './config/database.js';
-import corsMiddleware from './middleware/cors.js';
-import errorHandler from './middleware/errorHandler.js';
-import juegoRoutes from './routes/juegos.js';
-import reseñaRoutes from './routes/reseñas.js';
+import juegoRoutes from './routes/juegos.js';  // ← IMPORTANTE
+import resenaRoutes from './routes/resenas.js'; // ← IMPORTANTE
 
-// Configurar variables de entorno
+// Cargar variables de entorno
 dotenv.config();
 
-// Conectar a la base de datos
-connectDB();
-
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(corsMiddleware);
+// Middlewares
+app.use(cors({
+  origin: ['https://diego-132hub.github.io', 'http://localhost:5173'],
+  credentials: true
+}));
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Logging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// Rutas principales
+// ✅ RUTAS CONFIGURADAS CORRECTAMENTE
 app.use('/api/juegos', juegoRoutes);
-app.use('/api/reseñas', reseñaRoutes);
+app.use('/api/resenas', resenaRoutes);
 
-// Ruta de prueba
-app.get('/api', (req, res) => {
-  res.json({
-    success: true,
-    message: '🎮 GameTracker API funcionando correctamente!',
+// Ruta de prueba básica
+app.get('/', (req, res) => {
+  res.json({ 
+    message: '🚀 GameTracker API is running!',
     version: '1.0.0',
-    endpoints: {
-      juegos: '/api/juegos',
-      reseñas: '/api/reseñas',
-      documentación: 'Próximamente...'
-    }
+    timestamp: new Date().toISOString()
   });
 });
 
-// Ruta 404
+// Ruta de health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is running',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Manejo de rutas no encontradas
 app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Ruta no encontrada: ${req.originalUrl}`
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.originalUrl,
+    availableRoutes: ['/api/juegos', '/api/resenas', '/api/health']
   });
 });
 
-// Manejo de errores
-app.use(errorHandler);
+// Conexión a MongoDB y inicio del servidor
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`
-  🚀 Servidor GameTracker iniciado!
-  📍 Puerto: ${PORT}
-  🌐 Entorno: ${process.env.NODE_ENV || 'development'}
-  🔗 API: http://localhost:${PORT}/api
-  📊 MongoDB: Conectado a Atlas
-  `);
-});
+const startServer = async () => {
+  await connectDB();
+  
+  const PORT = process.env.PORT || 10000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📡 Base URL: http://localhost:${PORT}`);
+    console.log(`🔗 Available routes:`);
+    console.log(`   - GET /api/juegos`);
+    console.log(`   - GET /api/resenas`);
+    console.log(`   - GET /api/health`);
+  });
+};
 
-// Manejo graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\n🛑 Apagando servidor...');
-  process.exit(0);
-});
+startServer();
