@@ -4,10 +4,7 @@ import connectDB from './config/database.js';
 import corsMiddleware from './middleware/cors.js';
 import errorHandler from './middleware/errorHandler.js';
 import juegoRoutes from './routes/juegos.js';
-
-// Importar rutas SIN caracteres especiales
-// Si tu archivo se llama "reseñas.js", cámbialo a "resenas.js"
-import resenaRoutes from './routes/resenas.js';
+import reseñaRoutes from './routes/reseñas.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -16,7 +13,7 @@ dotenv.config();
 connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 10000; // Cambié a 10000 para Render
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(corsMiddleware);
@@ -29,33 +26,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ RUTAS PRINCIPALES - CON NOMBRES CORREGIDOS
+// Rutas principales
 app.use('/api/juegos', juegoRoutes);
-app.use('/api/resenas', resenaRoutes); // Sin ñ
+app.use('/api/reseñas', reseñaRoutes);
 
-// ✅ RUTA DE PRUEBA MEJORADA
-app.get('/', (req, res) => {
+// Ruta de prueba
+app.get('/api', (req, res) => {
   res.json({
     success: true,
     message: '🎮 GameTracker API funcionando correctamente!',
     version: '1.0.0',
-    timestamp: new Date().toISOString(),
     endpoints: {
       juegos: '/api/juegos',
-      resenas: '/api/resenas', // Sin ñ
-      health: '/api/health'
+      reseñas: '/api/reseñas',
+      documentación: 'Próximamente...'
     }
-  });
-});
-
-// ✅ NUEVA RUTA HEALTH CHECK
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'OK',
-    message: 'Servidor funcionando correctamente',
-    environment: process.env.NODE_ENV || 'development',
-    port: PORT
   });
 });
 
@@ -63,8 +48,7 @@ app.get('/api/health', (req, res) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: `Ruta no encontrada: ${req.originalUrl}`,
-    availableRoutes: ['/', '/api/health', '/api/juegos', '/api/resenas']
+    message: `Ruta no encontrada: ${req.originalUrl}`
   });
 });
 
@@ -74,15 +58,16 @@ app.use(errorHandler);
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`
-🚀 Servidor GameTracker iniciado!
-📍 Puerto: ${PORT}
-🌐 Entorno: ${process.env.NODE_ENV || 'development'}
-🔗 URL: http://localhost:${PORT}
-📊 MongoDB: Conectado a Atlas
-📡 Endpoints disponibles:
-   - GET / ✅
-   - GET /api/health ✅  
-   - GET /api/juegos ✅
-   - GET /api/resenas ✅
+  🚀 Servidor GameTracker iniciado!
+  📍 Puerto: ${PORT}
+  🌐 Entorno: ${process.env.NODE_ENV || 'development'}
+  🔗 API: http://localhost:${PORT}/api
+  📊 MongoDB: Conectado a Atlas
   `);
+});
+
+// Manejo graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Apagando servidor...');
+  process.exit(0);
 });
