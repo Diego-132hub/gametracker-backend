@@ -56,11 +56,11 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // Iniciar servidor
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Servidor GameTracker iniciado!`);
   console.log(`📍 Puerto: ${PORT}`);
   console.log(`🌐 Entorno: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 API: http://0.0.0.0:${PORT}/api`);
+  console.log(`🔗 API: http://${PORT}/api`);
 });
 
 // Manejo graceful shutdown
