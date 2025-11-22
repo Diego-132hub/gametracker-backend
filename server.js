@@ -1,88 +1,88 @@
 import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
 import dotenv from 'dotenv';
+import connectDB from './config/database.js';
+import corsMiddleware from './middleware/cors.js';
+import errorHandler from './middleware/errorHandler.js';
+import juegoRoutes from './routes/juegos.js';
 
-// Cargar variables de entorno
+// Importar rutas SIN caracteres especiales
+// Si tu archivo se llama "reseñas.js", cámbialo a "resenas.js"
+import resenaRoutes from './routes/resenas.js';
+
+// Configurar variables de entorno
 dotenv.config();
 
+// Conectar a la base de datos
+connectDB();
+
 const app = express();
+const PORT = process.env.PORT || 10000; // Cambié a 10000 para Render
 
-// Middlewares
-app.use(cors({
-  origin: ['https://diego-132hub.github.io', 'http://localhost:5173'],
-  credentials: true
-}));
-
+// Middleware
+app.use(corsMiddleware);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Ruta de prueba PRIMERO
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// ✅ RUTAS PRINCIPALES - CON NOMBRES CORREGIDOS
+app.use('/api/juegos', juegoRoutes);
+app.use('/api/resenas', resenaRoutes); // Sin ñ
+
+// ✅ RUTA DE PRUEBA MEJORADA
 app.get('/', (req, res) => {
-  res.json({ 
-    message: '🚀 GameTracker API is running!',
+  res.json({
+    success: true,
+    message: '🎮 GameTracker API funcionando correctamente!',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      juegos: '/api/juegos',
+      resenas: '/api/resenas', // Sin ñ
+      health: '/api/health'
+    }
   });
 });
 
-// Ruta de health check
+// ✅ NUEVA RUTA HEALTH CHECK
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Server is running',
-    environment: process.env.NODE_ENV || 'development'
+  res.json({
+    success: true,
+    status: 'OK',
+    message: 'Servidor funcionando correctamente',
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
   });
 });
 
-// Importar y usar rutas (con manejo de errores)
-try {
-  const juegoRoutes = await import('./routes/juegos.js');
-  const resenaRoutes = await import('./routes/resenas.js');
-  
-  app.use('/api/juegos', juegoRoutes.default);
-  app.use('/api/resenas', resenaRoutes.default);
-  
-  console.log('✅ All routes loaded successfully');
-} catch (error) {
-  console.error('❌ Error loading routes:', error);
-}
-
-// Manejo de rutas no encontradas
+// Ruta 404
 app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Route not found',
-    path: req.originalUrl,
+  res.status(404).json({
+    success: false,
+    message: `Ruta no encontrada: ${req.originalUrl}`,
     availableRoutes: ['/', '/api/health', '/api/juegos', '/api/resenas']
   });
 });
 
-// Conexión a MongoDB
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
-    return true;
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    return false;
-  }
-};
+// Manejo de errores
+app.use(errorHandler);
 
 // Iniciar servidor
-const startServer = async () => {
-  const dbConnected = await connectDB();
-  
-  if (!dbConnected) {
-    console.log('⚠️ Starting server without MongoDB connection');
-  }
-
-  const PORT = process.env.PORT || 10000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`📡 Base URL: http://localhost:${PORT}`);
-    console.log('✅ Server started successfully!');
-  });
-};
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`
+🚀 Servidor GameTracker iniciado!
+📍 Puerto: ${PORT}
+🌐 Entorno: ${process.env.NODE_ENV || 'development'}
+🔗 URL: http://localhost:${PORT}
+📊 MongoDB: Conectado a Atlas
+📡 Endpoints disponibles:
+   - GET / ✅
+   - GET /api/health ✅  
+   - GET /api/juegos ✅
+   - GET /api/resenas ✅
+  `);
+});
